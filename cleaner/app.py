@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from pathlib import Path
 
+# Key folders to analyze
 COMMON_PATHS = {
     'Documents': str(Path.home() / 'Documents'),
     'Applications': '/Applications',
@@ -19,6 +20,7 @@ COMMON_PATHS = {
     ]
 }
 
+# Recursively calculate folder sizes
 def get_total_size(paths):
     total = 0
     if isinstance(paths, str):
@@ -30,10 +32,11 @@ def get_total_size(paths):
             for f in filenames:
                 try:
                     total += os.path.getsize(os.path.join(dirpath, f))
-                except:
+                except Exception:
                     continue
     return total
 
+# Convert bytes to human-readable format
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "K", "M", "G", "T"]:
         if abs(num) < 1024.0:
@@ -41,6 +44,7 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f} P{suffix}"
 
+# Safely delete selected directories
 def clean_selected(selected_items):
     for item in selected_items:
         if item == 'System Data':
@@ -54,6 +58,7 @@ def clean_selected(selected_items):
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to clean {item}: {str(e)}")
 
+# Main GUI class
 class CleanerApp:
     def __init__(self, root):
         self.root = root
@@ -116,4 +121,15 @@ class CleanerApp:
         if not selected:
             messagebox.showinfo("Info", "No item selected to clean.")
             return
-        confirm = messageb
+        confirm = messagebox.askyesno("Confirm", "Are you sure you want to clean the selected items?")
+        if confirm:
+            clean_selected(selected)
+            self.scan_storage()
+            messagebox.showinfo("Success", "Selected items cleaned successfully.")
+
+# Entrypoint for CLI and GUI
+def main():
+    root = tk.Tk()
+    app = CleanerApp(root)
+    root.geometry("400x500")
+    root.mainloop()

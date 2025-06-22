@@ -78,14 +78,14 @@ class CleanerApp:
                   background=[('active', '#005A9E')])
 
     def _setup_widgets(self):
-        self.tree = ttk.Treeview(self.root, columns=("name", "size"), show='headings')
-        self.tree.heading("name", text="Folder")
+        self.tree = ttk.Treeview(self.root, columns=("size",), show='tree headings')
+        self.tree.heading("#0", text="Folder / File")
         self.tree.heading("size", text="Size")
-        self.tree.column("name", width=200)
+        self.tree.column("#0", width=260)
         self.tree.column("size", width=100, anchor='e')
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 5))
 
-        self.tree.bind("<Double-1>", self.on_item_double_click)
+        self.tree.bind("<<TreeviewOpen>>", self.on_expand)
 
         self.progress = ttk.Progressbar(self.root, mode='determinate')
         self.progress.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -110,9 +110,61 @@ class CleanerApp:
         label = self.label_list[index]
         paths = COMMON_PATHS[label]
         size = get_total_size(paths)
-        self.tree.insert('', 'end', iid=label, values=(label, sizeof_fmt(size)))
+        node = self.tree.insert('', 'end', iid=label, text=label, values=(sizeof_fmt(size),))
+        self.tree.insert(node, 'end', text="Loading...", values=("...",))  # Lazy loading placeholder
         self.progress["value"] = index + 1
         self.root.after(100, lambda: self._scan_next(index + 1))
+
+    def on_expand(self, event):
+        node = self.tree.focus()
+        children = self.tree.get_children(node)
+        if children and self.tree.item(children[0], "text") == "Loading...":
+            self.tree.delete(children[0])
+            self.load_subitems(node)
+
+    def load_subitems(self, parent_key):
+        paths = COMMON_PATHS.get(parent_key)
+        if not paths:
+            # It's a subfolder, get its real path from the node's full path
+            base_path = self.get_full_path(parent_key)
+            if base_path:
+                self.populate_folder(parent_key, base_path)
+            return
+        if isinstance(paths, str):
+            paths = [paths]
+        for path in paths:
+            if os.path.exists(path):
+                self.populate_folder(parent_key, path)
+
+    def populate_folder(self, node, base_path):
+        try:
+            for item in os.listdir(base_path):
+                full_path = os.path.join(base_path, item)
+                display_name = f"[📁] {item}" if os.path.isdir(full_path) else item
+                try:
+                    size = get_total_size(full_path) if os.path.isdir(full_path) else os.path.getsize(full_path)
+                    sub_id = self.tree.insert(node, 'end', text=display_name, values=(sizeof_fmt(size),))
+                    if os.path.isdir(full_path):
+                        self.tree.insert(sub_id, 'end', text="Loading...", values=("...",))  # Subfolder lazy load
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    def get_full_path(self, node_id):
+        names = []
+        current = node_id
+        while current:
+            name = self.tree.item(current)["text"]
+            name = name.replace("[📁] ", "")
+            names.insert(0, name)
+            current = self.tree.parent(current)
+        # Try to resolve to an actual full path from the root folders
+        for label, path in COMMON_PATHS.items():
+            if names[0] == label:
+                base = path if isinstance(path, str) else path[0]
+                return os.path.join(base, *names[1:])
+        return None
 
     def clean_selected_items(self):
         selected = self.tree.selection()
@@ -124,38 +176,6 @@ class CleanerApp:
             clean_selected(selected)
             self.scan_storage()
             messagebox.showinfo("Success", "Selected items cleaned successfully.")
-
-    def on_item_double_click(self, event):
-        selected = self.tree.selection()
-        if selected:
-            folder_key = selected[0]
-            self.show_details(folder_key)
-
-    def show_details(self, folder_key):
-        detail_window = tk.Toplevel(self.root)
-        detail_window.title(f"{folder_key} Details")
-        detail_window.geometry("500x400")
-
-        tree = ttk.Treeview(detail_window, columns=("name", "size"), show='headings')
-        tree.heading("name", text="Name")
-        tree.heading("size", text="Size")
-        tree.column("name", width=300)
-        tree.column("size", width=100, anchor='e')
-        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        paths = COMMON_PATHS[folder_key]
-        if isinstance(paths, str):
-            paths = [paths]
-
-        for path in paths:
-            if os.path.exists(path):
-                try:
-                    for item in os.listdir(path):
-                        full_path = os.path.join(path, item)
-                        size = get_total_size(full_path) if os.path.isdir(full_path) else os.path.getsize(full_path)
-                        tree.insert('', 'end', values=(item, sizeof_fmt(size)))
-                except Exception:
-                    continue
 
 def main():
     root = tk.Tk()

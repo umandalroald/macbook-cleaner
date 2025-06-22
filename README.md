@@ -45,7 +45,7 @@ MacBook Cleaner helps you analyze and manage your disk space by displaying folde
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/macbook-cleaner.git
+git clone https://github.com/umandalroald/macbook-cleaner.git
 cd macbook-cleaner
 ```
 

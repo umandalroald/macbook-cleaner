@@ -6,7 +6,7 @@
 MacBook Cleaner helps you analyze and manage your disk space by displaying folder and file sizes in an expandable tree view. It gives you insights into what’s consuming storage and allows you to safely clean non-critical folders like `Documents`, `Developer`, `Applications`, `System Data`.
 
 ---
-
+**IMPORTANT NOTE:** THIS IS STILL IN ACTIVE DEVELOPMENT USE AT YOUR OWN RISK
 ## 📸 Demo
 
 <img src="screenshot.png" alt="MacBook Cleaner UI" width="600">

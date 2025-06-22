@@ -20,7 +20,6 @@ COMMON_PATHS = {
     ]
 }
 
-# Recursively calculate folder sizes
 def get_total_size(paths):
     total = 0
     if isinstance(paths, str):
@@ -36,7 +35,6 @@ def get_total_size(paths):
                     continue
     return total
 
-# Convert bytes to human-readable format
 def sizeof_fmt(num, suffix="B"):
     for unit in ["", "K", "M", "G", "T"]:
         if abs(num) < 1024.0:
@@ -44,7 +42,6 @@ def sizeof_fmt(num, suffix="B"):
         num /= 1024.0
     return f"{num:.1f} P{suffix}"
 
-# Safely delete selected directories
 def clean_selected(selected_items):
     for item in selected_items:
         if item == 'System Data':
@@ -58,7 +55,6 @@ def clean_selected(selected_items):
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to clean {item}: {str(e)}")
 
-# Main GUI class
 class CleanerApp:
     def __init__(self, root):
         self.root = root
@@ -88,6 +84,8 @@ class CleanerApp:
         self.tree.column("name", width=200)
         self.tree.column("size", width=100, anchor='e')
         self.tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 5))
+
+        self.tree.bind("<Double-1>", self.on_item_double_click)
 
         self.progress = ttk.Progressbar(self.root, mode='determinate')
         self.progress.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -127,7 +125,38 @@ class CleanerApp:
             self.scan_storage()
             messagebox.showinfo("Success", "Selected items cleaned successfully.")
 
-# Entrypoint for CLI and GUI
+    def on_item_double_click(self, event):
+        selected = self.tree.selection()
+        if selected:
+            folder_key = selected[0]
+            self.show_details(folder_key)
+
+    def show_details(self, folder_key):
+        detail_window = tk.Toplevel(self.root)
+        detail_window.title(f"{folder_key} Details")
+        detail_window.geometry("500x400")
+
+        tree = ttk.Treeview(detail_window, columns=("name", "size"), show='headings')
+        tree.heading("name", text="Name")
+        tree.heading("size", text="Size")
+        tree.column("name", width=300)
+        tree.column("size", width=100, anchor='e')
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        paths = COMMON_PATHS[folder_key]
+        if isinstance(paths, str):
+            paths = [paths]
+
+        for path in paths:
+            if os.path.exists(path):
+                try:
+                    for item in os.listdir(path):
+                        full_path = os.path.join(path, item)
+                        size = get_total_size(full_path) if os.path.isdir(full_path) else os.path.getsize(full_path)
+                        tree.insert('', 'end', values=(item, sizeof_fmt(size)))
+                except Exception:
+                    continue
+
 def main():
     root = tk.Tk()
     app = CleanerApp(root)

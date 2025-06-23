@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from pathlib import Path
 
+from pygments.styles.dracula import background
+
 # Key folders to analyze
 COMMON_PATHS = {
     'Documents': str(Path.home() / 'Documents'),
@@ -67,7 +69,7 @@ class CleanerApp:
 
     def _setup_styles(self):
         style = ttk.Style(self.root)
-        style.theme_use('clam')
+        style.theme_use('aqua')
         style.configure('TButton',
                         font=('Segoe UI', 11),
                         padding=8,

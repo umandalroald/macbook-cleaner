@@ -182,5 +182,13 @@ class CleanerApp:
 def main():
     root = tk.Tk()
     app = CleanerApp(root)
-    root.geometry("400x500")
+    root.geometry("900x700") # Set desired screen size here
+    center_window(root, 800, 600)
     root.mainloop()
+
+def center_window(window, width=800, height=600):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    window.geometry(f"{width}x{height}+{x}+{y}")
